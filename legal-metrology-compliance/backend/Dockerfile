@@ -1,10 +1,5 @@
 FROM python:3.10-slim
 
-# Full system library set for this stack, added in one shot to avoid
-# another round of "missing .so" errors: pyzbar (libzbar), opencv
-# (libgl1, glib, libsm/libxext/libxrender - legacy X11 libs opencv's
-# wheel still links against on Debian), weasyprint (pango, cairo,
-# gdk-pixbuf, fonts), and torch/easyocr (libgomp for OpenMP).
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libzbar0 \
     libgl1 \
@@ -27,6 +22,8 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
+
+RUN python -c "import easyocr; easyocr.Reader(['en'], gpu=False)"
 
 COPY . .
 
