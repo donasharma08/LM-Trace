@@ -3,7 +3,7 @@ uvicorn[standard]==0.30.6
 python-multipart==0.0.9
 pydantic==2.9.2
 supabase==2.7.4
-pyjwt==2.9.0
+pyjwt[crypto]==2.9.0
 opencv-contrib-python==4.10.0.84
 numpy==1.26.4
 easyocr==1.7.2
