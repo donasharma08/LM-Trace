@@ -1,0 +1,119 @@
+{
+  "_source_note": "Encodes Rule 6 (mandatory declarations) and Rule 7 (letter/numeral size) of the Legal Metrology (Packaged Commodities) Rules, 2011, as amended. area_brackets_mm holds Table-I/II placeholder values -- cross-check against the current gazetted text at consumeraffairs.gov.in before relying on them beyond a demo.",
+
+  "mandatory_declarations": [
+    {
+      "id": "manufacturer_details",
+      "label": "Name and address of manufacturer/packer/importer",
+      "required": true,
+      "extraction_hint": "keywords",
+      "keywords": ["mfg by", "manufactured by", "marketed by", "packed by", "imported by", "mfd by"],
+      "validation": "presence_and_min_length",
+      "min_length": 10,
+      "rule_version": "1.0",
+      "effective_date": "2011-04-01",
+      "source": "LM(PC) Rules 2011, Rule 6(1)(a)",
+      "status": "current"
+    },
+    {
+      "id": "country_of_origin",
+      "label": "Country of origin",
+      "required": false,
+      "required_if": "is_imported",
+      "extraction_hint": "keywords",
+      "keywords": ["country of origin", "made in", "product of"],
+      "validation": "presence",
+      "rule_version": "1.0",
+      "effective_date": "2011-04-01",
+      "source": "LM(PC) Rules 2011, Rule 6(1)(g)",
+      "status": "current"
+    },
+    {
+      "id": "generic_name",
+      "label": "Common or generic name of the commodity",
+      "required": true,
+      "extraction_hint": "heuristic_title_line",
+      "validation": "presence",
+      "rule_version": "1.0",
+      "effective_date": "2011-04-01",
+      "source": "LM(PC) Rules 2011, Rule 6(1)(b)",
+      "status": "current"
+    },
+    {
+      "id": "net_quantity",
+      "label": "Net quantity in standard units",
+      "required": true,
+      "extraction_hint": "regex",
+      "regex": "(\\d+(\\.\\d+)?)\\s?(g|gm|gram|grams|kg|ml|milliliter|millilitre|l|litre|liter|litres|n|no|nos|pcs|piece|pieces)\\b",
+      "validation": "regex_match",
+      "font_checked": true,
+      "rule_version": "1.0",
+      "effective_date": "2011-04-01",
+      "source": "LM(PC) Rules 2011, Rule 6(1)(c) / Rule 7",
+      "status": "current"
+    },
+    {
+      "id": "mfg_date",
+      "label": "Month and year of manufacture/packing/import",
+      "required": true,
+      "extraction_hint": "regex",
+      "regex": "(mfg|mfd|manufactured|packed|packaging)\\.?\\s*(date|dt)?\\.?\\s*[:\\-]?\\s*((0[1-9]|1[0-2])[\\/\\-.](\\d{2}|\\d{4})|[A-Za-z]{3,9}\\s?\\d{4})",
+      "validation": "regex_match",
+      "rule_version": "1.0",
+      "effective_date": "2011-04-01",
+      "source": "LM(PC) Rules 2011, Rule 6(1)(d)",
+      "status": "current"
+    },
+    {
+      "id": "mrp",
+      "label": "Maximum Retail Price inclusive of all taxes",
+      "required": true,
+      "extraction_hint": "regex",
+      "regex": "(mrp|m\\.r\\.p|maximum retail price)\\.?\\s*[:\\-]?\\s*(rs\\.?|inr|\\u20b9)?\\s*\\d+(\\.\\d{1,2})?",
+      "validation": "regex_match",
+      "extra_check": "must_contain_inclusive_of_taxes_phrase",
+      "font_checked": true,
+      "rule_version": "1.0",
+      "effective_date": "2011-04-01",
+      "source": "LM(PC) Rules 2011, Rule 6(1)(e) / Rule 7",
+      "status": "current"
+    },
+    {
+      "id": "consumer_care",
+      "label": "Consumer care name, address, and phone/email",
+      "required": true,
+      "extraction_hint": "regex",
+      "regex": "(consumer care|customer care|toll[- ]?free|helpline)[^\\n]{0,120}",
+      "validation": "regex_match",
+      "rule_version": "1.0",
+      "effective_date": "2011-04-01",
+      "source": "LM(PC) Rules 2011, Rule 6(1)(f)",
+      "status": "current"
+    }
+  ],
+
+  "font_size_rules": {
+    "_note": "Rule 7: min 1mm letter height generally, 2mm when blown/molded/embossed. Table-I/II break this down further by principal-display-panel area -- verify area_brackets_mm before relying on it beyond a demo. Measurement source is barcode-based calibration (services/barcode_service.py), not a physical marker -- see its module docstring for the accuracy caveat.",
+    "default_min_height_mm": 1.0,
+    "molded_or_embossed_min_height_mm": 2.0,
+    "min_width_to_height_ratio": 0.333,
+    "area_brackets_mm": [
+      { "max_area_cm2": 100, "min_height_mm": 1.0 },
+      { "max_area_cm2": 500, "min_height_mm": 2.0 },
+      { "max_area_cm2": 2500, "min_height_mm": 4.0 },
+      { "max_area_cm2": null, "min_height_mm": 6.0 }
+    ],
+    "rule_version": "1.0",
+    "source": "LM(PC) Rules 2011, Rule 7"
+  },
+
+  "structural_flags": {
+    "_note": "Rule-based, non-semantic checks. Heuristics, not a misleading-intent classifier -- always surfaced as manual-review flags, never as a hard violation.",
+    "checks": [
+      {
+        "id": "mrp_without_inclusive_tax_phrase",
+        "description": "MRP printed without an 'inclusive of all taxes' qualifier nearby"
+      }
+    ]
+  }
+}
