@@ -10,7 +10,8 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from app.database import get_supabase
 from app.models import ScanResultOut
 from app.routers.auth import CurrentUser, get_current_user
-from app.services import barcode_service, company_service, evidence_service, ocr_service, quality_service
+from app.services import company_service, evidence_service, ocr_service, quality_service
+from app.services.ocr_service import OcrServiceError
 from app.services.rule_engine import RuleEngine
 
 router = APIRouter(prefix="/api/scan", tags=["scan"])
@@ -54,11 +55,16 @@ async def create_scan(
             images_for_ocr.append((back_img, "secondary"))
             panels_photographed = 2
 
-    calibration = barcode_service.calibrate(primary_img)
+    try:
+        ocr_results = [ocr_service.extract(img, source_panel=panel) for img, panel in images_for_ocr]
+    except OcrServiceError as exc:
+        raise HTTPException(status_code=502, detail=f"OCR service error: {exc}") from exc
 
-    ocr_results = [ocr_service.extract(img, source_panel=panel) for img, panel in images_for_ocr]
     merged_ocr = ocr_service.merge_results(ocr_results)
 
+    # No calibration source wired in this MVP (barcode calibration is
+    # future scope) -- mm_per_pixel stays None, so font-size fields
+    # correctly resolve to REVIEW_REQUIRED rather than a fabricated verdict.
     prelim = rule_engine.evaluate(
         merged_ocr.full_text, is_imported=is_imported, panels_photographed=panels_photographed
     )
@@ -69,7 +75,7 @@ async def create_scan(
         extracted_text=merged_ocr.full_text,
         text_regions=field_regions,
         is_imported=is_imported,
-        mm_per_pixel=calibration.mm_per_pixel,
+        mm_per_pixel=None,
         panels_photographed=panels_photographed,
     )
 
@@ -93,6 +99,8 @@ async def create_scan(
     evidence_urls = _upload_evidence(
         supabase, scan_id, [image] + list(evidence_photos), annotated_bytes
     )
+    primary_image_url = evidence_urls[0] if evidence_urls else None
+    img_height, img_width = primary_img.shape[:2]
 
     supabase.table("scans").insert(
         {
@@ -107,6 +115,8 @@ async def create_scan(
             "company_id": company["id"] if company else None,
             "re_scan_of": re_scan_of,
             "panels_photographed": panels_photographed,
+            "image_width": img_width,
+            "image_height": img_height,
             "created_at": created_at.isoformat(),
         }
     ).execute()
@@ -126,6 +136,9 @@ async def create_scan(
         declarations=result.declarations,
         structural_flags=result.structural_flags,
         company_note=company_note,
+        primary_image_url=primary_image_url,
+        image_width=img_width,
+        image_height=img_height,
         created_at=created_at,
     )
 

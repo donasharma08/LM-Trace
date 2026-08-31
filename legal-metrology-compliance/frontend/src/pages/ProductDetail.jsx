@@ -1,13 +1,16 @@
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ComplianceStamp from "../components/ComplianceStamp";
 import CompanyNote from "../components/CompanyNote";
+import EvidenceViewer from "../components/EvidenceViewer";
 import ViolationList from "../components/ViolationList";
 import { api } from "../lib/api";
 
 export default function ProductDetail() {
   const { scanId } = useParams();
   const [scan, setScan] = useState(null);
+  const [activeId, setActiveId] = useState(null);
 
   useEffect(() => {
     api.getScanDetail(scanId).then((res) => setScan(res.data));
@@ -22,12 +25,15 @@ export default function ProductDetail() {
       ? `${scan.company.name_raw} has ${scan.company.non_compliant_count} non-compliant scans on record across ${scan.company.total_scans} total inspections.`
       : null;
 
-  // annotated evidence image is always the last uploaded evidence URL (see routers/scan.py)
-  const annotatedUrl = scan.evidence_urls?.[scan.evidence_urls.length - 1];
-  const otherEvidence = scan.evidence_urls?.slice(0, -1) || [];
+  const primaryImageUrl = scan.evidence_urls?.[0];
+  const otherEvidence = scan.evidence_urls?.slice(1, -1) || [];
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="max-w-4xl mx-auto px-6 py-8 space-y-6"
+    >
       <div className="panel p-6 flex items-center justify-between flex-wrap gap-4">
         <div>
           <div className="eyebrow">{scan.product_name}</div>
@@ -57,14 +63,26 @@ export default function ProductDetail() {
 
       <CompanyNote note={companyNote} />
 
-      {annotatedUrl && (
-        <div className="panel p-5">
-          <span className="eyebrow">Evidence — declarations highlighted on original image</span>
-          <img src={annotatedUrl} alt="Annotated evidence" className="mt-3 rounded-sm border border-grid w-full" />
+      {primaryImageUrl && (
+        <div>
+          <span className="eyebrow block mb-2">Evidence — hover a declaration below to locate it</span>
+          <EvidenceViewer
+            imageUrl={primaryImageUrl}
+            imageWidth={scan.image_width}
+            imageHeight={scan.image_height}
+            declarations={scan.declarations}
+            activeId={activeId}
+            onHover={setActiveId}
+          />
         </div>
       )}
 
-      <ViolationList declarations={scan.declarations} structuralFlags={scan.structural_flags} />
+      <ViolationList
+        declarations={scan.declarations}
+        structuralFlags={scan.structural_flags}
+        activeId={activeId}
+        onHover={setActiveId}
+      />
 
       {otherEvidence.length > 0 && (
         <div className="panel p-5">
@@ -78,6 +96,6 @@ export default function ProductDetail() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

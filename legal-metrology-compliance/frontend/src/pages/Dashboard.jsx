@@ -1,14 +1,22 @@
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import ProductTable from "../components/ProductTable";
 import { api } from "../lib/api";
+import { useCountUp } from "../lib/useCountUp";
 
-function StatCard({ label, value, tone = "ink" }) {
+function StatCard({ label, value, tone = "ink", delay = 0 }) {
+  const displayValue = useCountUp(value ?? 0);
   return (
-    <div className="panel p-4">
+    <motion.div
+      className="panel p-4"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+    >
       <div className="eyebrow">{label}</div>
-      <div className={`font-display text-3xl font-semibold mt-1 text-${tone}`}>{value}</div>
-    </div>
+      <div className={`font-display text-3xl font-semibold mt-1 text-${tone}`}>{displayValue}</div>
+    </motion.div>
   );
 }
 
@@ -52,31 +60,41 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <motion.div
+        className="flex items-center justify-between"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
         <div>
           <h1 className="text-2xl font-semibold text-ink">Inspection dashboard</h1>
           <p className="eyebrow mt-1">Compliance status across all scanned products</p>
         </div>
-        <Link
-          to="/scan/new"
-          className="bg-ink text-white text-sm font-medium px-4 py-2 rounded-sm hover:bg-ink/90 transition-colors"
-        >
-          + New scan
-        </Link>
-      </div>
+        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+          <Link
+            to="/scan/new"
+            className="bg-ink text-white text-sm font-medium px-4 py-2 rounded-sm hover:bg-ink/90 transition-colors inline-block"
+          >
+            + New scan
+          </Link>
+        </motion.div>
+      </motion.div>
 
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <StatCard label="Products scanned" value={stats.total_products} />
-          <StatCard label="Total scans" value={stats.total_scans} />
-          <StatCard label="Pass" value={stats.pass_count} tone="pass" />
-          <StatCard label="Non-compliant" value={stats.potential_non_compliance_count} tone="fail" />
-          <StatCard label="Review required" value={stats.review_required_count} tone="flag" />
+          <StatCard label="Products scanned" value={stats.total_products} delay={0} />
+          <StatCard label="Total scans" value={stats.total_scans} delay={0.04} />
+          <StatCard label="Pass" value={stats.pass_count} tone="pass" delay={0.08} />
+          <StatCard label="Non-compliant" value={stats.potential_non_compliance_count} tone="fail" delay={0.12} />
+          <StatCard label="Review required" value={stats.review_required_count} tone="flag" delay={0.16} />
         </div>
       )}
 
       {offenders.length > 0 && (
-        <div className="panel border-l-[3px] border-l-flag p-4">
+        <motion.div
+          className="panel border-l-[3px] border-l-flag p-4"
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
           <span className="eyebrow text-flag">Repeat non-compliance — companies</span>
           <div className="mt-2 space-y-1">
             {offenders.map((c) => (
@@ -88,7 +106,7 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       <div className="flex flex-wrap items-center gap-3">
@@ -107,7 +125,7 @@ export default function Dashboard() {
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`text-xs font-mono px-3 py-1.5 rounded-sm border ${
+              className={`text-xs font-mono px-3 py-1.5 rounded-sm border transition-colors ${
                 filter === f.key ? "bg-ink text-white border-ink" : "border-grid text-ink-muted"
               }`}
             >

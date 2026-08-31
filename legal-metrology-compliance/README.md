@@ -3,6 +3,19 @@
 Automated screening of packaged-commodity labels against the Legal Metrology
 (Packaged Commodities) Rules, 2011. Single-panel inspection officer MVP.
 
+## Interactive UI
+
+- Login and dashboard redesigned as first-impression screens (split-panel
+  branded login, animated stat counters, empty-state illustration)
+- Scan submission shows a live animated pipeline (quality check → barcode
+  calibration → OCR → rule validation) instead of a static spinner
+- Evidence viewer is interactive: hovering a declaration in the checklist
+  highlights its exact bounding box on the original image, and vice versa —
+  requires `image_width`/`image_height`/`primary_image_url` returned by
+  `/api/scan` and stored per-scan (see `supabase/schema.sql`)
+- Drag-and-drop image upload with live thumbnail preview
+- Compliance stamp uses a spring-physics "impact" animation, not a CSS fade
+
 ## What this build does
 
 1. **Upload → quality check → calibrate → OCR → validate → report**, one pipeline.

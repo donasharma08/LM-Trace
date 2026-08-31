@@ -1,3 +1,5 @@
+import { motion } from "framer-motion";
+
 const STATUS_STYLES = {
   pass: "bg-pass/10 text-pass",
   potential_non_compliance: "bg-fail/10 text-fail",
@@ -10,14 +12,21 @@ const STATUS_LABELS = {
   review_required: "REVIEW",
 };
 
-export default function ViolationList({ declarations, structuralFlags }) {
+export default function ViolationList({ declarations, structuralFlags, activeId, onHover }) {
   return (
     <div className="panel divide-y divide-grid">
       <div className="px-5 py-3 bg-paper/60">
         <span className="eyebrow">Declaration checklist</span>
       </div>
       {declarations.map((d) => (
-        <div key={d.id} className="px-5 py-3 flex items-start justify-between gap-4">
+        <motion.div
+          key={d.id}
+          onMouseEnter={() => d.bbox_px && onHover?.(d.id)}
+          onMouseLeave={() => onHover?.(null)}
+          animate={{ backgroundColor: activeId === d.id ? "rgba(27,42,74,0.04)" : "rgba(0,0,0,0)" }}
+          transition={{ duration: 0.15 }}
+          className={`px-5 py-3 flex items-start justify-between gap-4 ${d.bbox_px ? "cursor-pointer" : ""}`}
+        >
           <div>
             <div className="text-sm font-medium text-ink">{d.label}</div>
             <div className="text-[10px] font-mono text-ink-muted/70 mt-0.5">
@@ -40,7 +49,7 @@ export default function ViolationList({ declarations, structuralFlags }) {
           <span className={`shrink-0 text-xs font-mono px-2 py-0.5 rounded ${STATUS_STYLES[d.status]}`}>
             {STATUS_LABELS[d.status]}
           </span>
-        </div>
+        </motion.div>
       ))}
 
       {structuralFlags?.length > 0 && (

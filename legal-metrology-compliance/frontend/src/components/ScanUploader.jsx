@@ -1,45 +1,90 @@
+import { motion } from "framer-motion";
 import { useRef, useState } from "react";
 
 function ImagePicker({ label, required, file, onChange }) {
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  const setFile = (f) => {
+    if (!f) return;
+    onChange(f);
+    setPreviewUrl(URL.createObjectURL(f));
+  };
 
   return (
     <div>
       <label className="eyebrow block mb-1">
         {label} {required && <span className="text-fail">*</span>}
       </label>
-      <div className="flex gap-2 flex-wrap items-center">
-        <button
-          type="button"
-          onClick={() => cameraInputRef.current?.click()}
-          className="text-xs font-medium border border-grid px-3 py-2 rounded-sm hover:border-ink transition-colors"
-        >
-          📷 Take photo
-        </button>
-        <button
-          type="button"
-          onClick={() => galleryInputRef.current?.click()}
-          className="text-xs font-medium border border-grid px-3 py-2 rounded-sm hover:border-ink transition-colors"
-        >
-          🖼 Choose from gallery / files
-        </button>
-        {file && <span className="text-xs font-mono text-ink-muted truncate max-w-[10rem]">{file.name}</span>}
-      </div>
+
+      <motion.div
+        onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          const f = e.dataTransfer.files?.[0];
+          if (f) setFile(f);
+        }}
+        animate={{
+          borderColor: isDragOver ? "#1B2A4A" : "#D8DEE4",
+          backgroundColor: isDragOver ? "rgba(27,42,74,0.03)" : "transparent",
+        }}
+        className="border-2 border-dashed rounded-sm p-4 transition-colors"
+      >
+        {previewUrl ? (
+          <div className="flex items-center gap-3">
+            <img src={previewUrl} alt="Preview" className="w-16 h-16 object-cover rounded-sm border border-grid" />
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-mono text-ink truncate">{file.name}</div>
+              <button
+                type="button"
+                onClick={() => { onChange(null); setPreviewUrl(null); }}
+                className="text-xs text-fail underline underline-offset-2 mt-1"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="text-xs text-ink-muted mb-2">Drag a photo here, or:</p>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="text-xs font-medium border border-grid px-3 py-2 rounded-sm hover:border-ink transition-colors bg-panel"
+              >
+                📷 Take photo
+              </button>
+              <button
+                type="button"
+                onClick={() => galleryInputRef.current?.click()}
+                className="text-xs font-medium border border-grid px-3 py-2 rounded-sm hover:border-ink transition-colors bg-panel"
+              >
+                🖼 Choose from gallery / files
+              </button>
+            </div>
+          </>
+        )}
+      </motion.div>
+
       <input
         ref={cameraInputRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => e.target.files[0] && onChange(e.target.files[0])}
+        onChange={(e) => setFile(e.target.files[0])}
       />
       <input
         ref={galleryInputRef}
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => e.target.files[0] && onChange(e.target.files[0])}
+        onChange={(e) => setFile(e.target.files[0])}
       />
     </div>
   );
@@ -65,7 +110,13 @@ export default function ScanUploader({ onSubmit, submitting }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="panel p-6 space-y-5">
+    <motion.form
+      onSubmit={handleSubmit}
+      className="panel p-6 space-y-5"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
       <div>
         <label className="eyebrow block mb-1">Product name</label>
         <input
@@ -89,6 +140,14 @@ export default function ScanUploader({ onSubmit, submitting }) {
         onChange={setBackPanelImage}
       />
 
+      <div className="border border-dashed border-grid rounded-sm p-3 bg-paper/40">
+        <span className="text-[10px] font-mono uppercase tracking-wider text-ink-muted/60">Future scope — not active this build</span>
+        <p className="text-xs text-ink-muted mt-1">
+          Barcode-based font-size calibration is not wired in this MVP — font-size fields
+          will show REVIEW REQUIRED rather than a measured value.
+        </p>
+      </div>
+
       <div>
         <label className="eyebrow block mb-1">Additional evidence photos (optional)</label>
         <input
@@ -100,13 +159,15 @@ export default function ScanUploader({ onSubmit, submitting }) {
         />
       </div>
 
-      <button
+      <motion.button
         type="submit"
         disabled={submitting}
+        whileHover={{ scale: submitting ? 1 : 1.01 }}
+        whileTap={{ scale: submitting ? 1 : 0.98 }}
         className="w-full bg-ink text-white font-medium text-sm py-2.5 rounded-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
       >
         {submitting ? "Scanning…" : "Run compliance scan"}
-      </button>
-    </form>
+      </motion.button>
+    </motion.form>
   );
 }

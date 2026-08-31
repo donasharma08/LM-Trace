@@ -50,6 +50,7 @@ class DeclarationResult:
     notes: list[str] = field(default_factory=list)
     rule_version: str | None = None
     rule_source: str | None = None
+    bbox_px: list | None = None  # [[x,y]x4] on the primary image, for the interactive evidence overlay
 
 
 @dataclass
@@ -133,6 +134,7 @@ class RuleEngine:
                 notes=notes,
                 rule_version=rule.get("rule_version"),
                 rule_source=rule.get("source"),
+                bbox_px=region_by_field.get(rule["id"], {}).get("bbox_px") if found else None,
             )
 
             if found and rule.get("font_checked"):

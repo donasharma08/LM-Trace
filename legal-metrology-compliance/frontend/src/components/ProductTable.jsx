@@ -1,4 +1,6 @@
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import EmptyState from "./EmptyState";
 
 const STATUS_STYLES = {
   pass: "bg-pass/10 text-pass",
@@ -15,9 +17,18 @@ const STATUS_LABELS = {
 export default function ProductTable({ products }) {
   if (!products.length) {
     return (
-      <div className="panel px-6 py-10 text-center text-ink-muted text-sm">
-        No scans yet. Run a new scan to start building the repository.
-      </div>
+      <EmptyState
+        title="No scans yet"
+        subtitle="Run your first compliance scan to start building the repository."
+        action={
+          <Link
+            to="/scan/new"
+            className="text-xs font-medium bg-ink text-white px-3 py-2 rounded-sm hover:bg-ink/90 transition-colors"
+          >
+            Run first scan
+          </Link>
+        }
+      />
     );
   }
 
@@ -34,8 +45,14 @@ export default function ProductTable({ products }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-grid">
-          {products.map((p) => (
-            <tr key={p.id} className="hover:bg-paper/40 transition-colors">
+          {products.map((p, i) => (
+            <motion.tr
+              key={p.id}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: Math.min(i * 0.03, 0.3) }}
+              className="hover:bg-paper/40 transition-colors"
+            >
               <td className="px-5 py-3 font-medium text-ink">{p.name}</td>
               <td className="px-5 py-3">
                 <span className={`font-mono text-xs px-2 py-0.5 rounded ${STATUS_STYLES[p.last_scan_status]}`}>
@@ -54,7 +71,7 @@ export default function ProductTable({ products }) {
                   View report
                 </Link>
               </td>
-            </tr>
+            </motion.tr>
           ))}
         </tbody>
       </table>

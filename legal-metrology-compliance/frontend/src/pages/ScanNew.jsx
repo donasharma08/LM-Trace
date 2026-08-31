@@ -1,7 +1,10 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ComplianceStamp from "../components/ComplianceStamp";
 import CompanyNote from "../components/CompanyNote";
+import EvidenceViewer from "../components/EvidenceViewer";
+import ScanPipeline from "../components/ScanPipeline";
 import ScanUploader from "../components/ScanUploader";
 import ViolationList from "../components/ViolationList";
 import { api } from "../lib/api";
@@ -10,6 +13,7 @@ export default function ScanNew() {
   const [result, setResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [activeId, setActiveId] = useState(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (formData) => {
@@ -34,11 +38,24 @@ export default function ScanNew() {
     <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
       <h1 className="text-2xl font-semibold text-ink">New scan</h1>
 
-      {!result && <ScanUploader onSubmit={handleSubmit} submitting={submitting} />}
+      <AnimatePresence mode="wait">
+        {!result && !submitting && (
+          <motion.div key="form" exit={{ opacity: 0 }}>
+            <ScanUploader onSubmit={handleSubmit} submitting={submitting} />
+          </motion.div>
+        )}
+
+        {submitting && (
+          <motion.div key="pipeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <ScanPipeline done={false} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {error && <p className="text-sm font-mono text-fail">{error}</p>}
 
       {result && (
-        <div className="space-y-5">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
           <div className="panel p-6 flex items-center justify-between flex-wrap gap-4">
             <div>
               <div className="eyebrow">{result.product_name}</div>
@@ -64,7 +81,26 @@ export default function ScanNew() {
 
           <CompanyNote note={result.company_note} />
 
-          <ViolationList declarations={result.declarations} structuralFlags={result.structural_flags} />
+          {result.primary_image_url && (
+            <div>
+              <span className="eyebrow block mb-2">Evidence — hover a declaration below to locate it</span>
+              <EvidenceViewer
+                imageUrl={result.primary_image_url}
+                imageWidth={result.image_width}
+                imageHeight={result.image_height}
+                declarations={result.declarations}
+                activeId={activeId}
+                onHover={setActiveId}
+              />
+            </div>
+          )}
+
+          <ViolationList
+            declarations={result.declarations}
+            structuralFlags={result.structural_flags}
+            activeId={activeId}
+            onHover={setActiveId}
+          />
 
           <div className="flex gap-3">
             <button
@@ -80,7 +116,7 @@ export default function ScanNew() {
               Back to dashboard
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

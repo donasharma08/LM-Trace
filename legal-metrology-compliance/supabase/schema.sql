@@ -25,6 +25,8 @@ create table if not exists public.scans (
   company_id uuid references public.companies(id),
   re_scan_of uuid references public.scans(id),
   panels_photographed integer not null default 1,
+  image_width integer,
+  image_height integer,
   created_at timestamptz not null default now()
 );
 

@@ -15,6 +15,7 @@ class DeclarationOut(BaseModel):
     notes: list[str] = []
     rule_version: str | None = None
     rule_source: str | None = None
+    bbox_px: list | None = None
 
 
 class ScanResultOut(BaseModel):
@@ -25,6 +26,9 @@ class ScanResultOut(BaseModel):
     declarations: list[DeclarationOut]
     structural_flags: list[dict]
     company_note: str | None = None
+    primary_image_url: str | None = None
+    image_width: int | None = None
+    image_height: int | None = None
     created_at: datetime
 
 
