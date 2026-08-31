@@ -10,8 +10,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from app.database import get_supabase
 from app.models import ScanResultOut
 from app.routers.auth import CurrentUser, get_current_user
-from app.services import company_service, evidence_service, ocr_service, quality_service
-from app.services.ocr_service import OcrServiceError
+from app.services import barcode_service, company_service, evidence_service, ocr_service, quality_service
 from app.services.rule_engine import RuleEngine
 
 router = APIRouter(prefix="/api/scan", tags=["scan"])
@@ -55,16 +54,11 @@ async def create_scan(
             images_for_ocr.append((back_img, "secondary"))
             panels_photographed = 2
 
-    try:
-        ocr_results = [ocr_service.extract(img, source_panel=panel) for img, panel in images_for_ocr]
-    except OcrServiceError as exc:
-        raise HTTPException(status_code=502, detail=f"OCR service error: {exc}") from exc
-
+    ocr_results = [ocr_service.extract(img, source_panel=panel) for img, panel in images_for_ocr]
     merged_ocr = ocr_service.merge_results(ocr_results)
 
-    # No calibration source wired in this MVP (barcode calibration is
-    # future scope) -- mm_per_pixel stays None, so font-size fields
-    # correctly resolve to REVIEW_REQUIRED rather than a fabricated verdict.
+    calibration = barcode_service.calibrate(primary_img)
+
     prelim = rule_engine.evaluate(
         merged_ocr.full_text, is_imported=is_imported, panels_photographed=panels_photographed
     )
@@ -75,7 +69,7 @@ async def create_scan(
         extracted_text=merged_ocr.full_text,
         text_regions=field_regions,
         is_imported=is_imported,
-        mm_per_pixel=None,
+        mm_per_pixel=calibration.mm_per_pixel,
         panels_photographed=panels_photographed,
     )
 
