@@ -8,7 +8,7 @@ import numpy as np
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from app.database import get_supabase
-from app.models import ScanResultOut
+from app.models import DeclarationOut, ScanResultOut
 from app.routers.auth import CurrentUser, get_current_user
 from app.services import barcode_service, company_service, evidence_service, ocr_service, quality_service
 from app.services.rule_engine import RuleEngine
@@ -127,7 +127,7 @@ async def create_scan(
         product_name=product_name,
         overall_status=result.overall_status,
         calibrated=result.calibrated,
-        declarations=result.declarations,
+        declarations=[DeclarationOut(**d.__dict__) for d in result.declarations],
         structural_flags=result.structural_flags,
         company_note=company_note,
         primary_image_url=primary_image_url,
